@@ -75,7 +75,7 @@ public class Exercise2 {
         // TODO: YOUR CODE HERE
         //
 		double capPeriod = 1.0;
-		double globalCap = powerCap*nServers;
+		double globalCap = powerCap*100*nServers;
 		double maxPower = 100*nServers;
 		double minPower = 52*nServers;
 		PowerCappingEnforcer enforcer = new PowerCappingEnforcer(experiment, capPeriod, globalCap, maxPower, minPower);
