@@ -92,7 +92,7 @@ public class Exercise1 {
             //
             // TODO: YOUR CODE HERE
             //
-
+		server.setDvfsSpeed(0,dvfs);
             dataCenter.addServer(server);
             measurer.addServer(server);
         }

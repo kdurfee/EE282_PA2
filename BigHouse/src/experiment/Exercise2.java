@@ -74,6 +74,11 @@ public class Exercise2 {
         //
         // TODO: YOUR CODE HERE
         //
+		double capPeriod = 1.0;
+		double globalCap = powerCap*nServers;
+		double maxPower = 100*nServers;
+		double minPower = 52*nServers;
+		PowerCappingEnforcer enforcer = new PowerCappingEnforcer(experiment, capPeriod, globalCap, maxPower, minPower);
 
         for(int i = 0; i < nServers; i++) {
             Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceGenerator);
@@ -101,6 +106,7 @@ public class Exercise2 {
             //
             // TODO: YOUR CODE HERE
             //
+			enforcer.addServer(server);
         }
 
         experimentInput.setDataCenter(dataCenter);
