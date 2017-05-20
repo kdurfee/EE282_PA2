@@ -73,6 +73,7 @@ public class Exercise3 {
 
         ExperimentOutput experimentOutput = new ExperimentOutput();
         experimentOutput.addOutput(StatName.SOJOURN_TIME, .05, .95, .05, 5000);
+        experimentOutput.addOutput(StatName.SERVER_LEVEL_UTIL, .05, .95, .05, 5000);
 
         Experiment experiment = new Experiment("Exercise 3", rand, experimentInput, experimentOutput);
 
@@ -113,6 +114,8 @@ public class Exercise3 {
 
         // run the experiment
         experiment.run();
+
+	System.out.println("B file is "+serviceBFile);
 
         // display results
         System.out.println("====== Results ======");
