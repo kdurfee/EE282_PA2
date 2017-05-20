@@ -34,6 +34,7 @@ public class Exercise3 {
         // TODO: YOUR CODE HERE
         // serviceBFile
         //
+        String serviceBFile = workloadDir + "/workloads/" + workload + ".service.B.cdf";
 
         // specify distribution
         int cores = 4;
@@ -46,6 +47,7 @@ public class Exercise3 {
         // TODO: YOUR CODE HERE
         // serviceBDistribution
         //
+        EmpiricalDistribution serviceBDistribution = EmpiricalDistribution.loadDistribution(serviceBFile, 1e-3);
 
         double averageInterarrival = arrivalDistribution.getMean();
         double averageServiceTime = serviceADistribution.getMean();
@@ -64,6 +66,7 @@ public class Exercise3 {
         // TODO: YOUR CODE HERE
         // serviceBGenerator
         //
+        EmpiricalGenerator serviceBGenerator  = new EmpiricalGenerator(rand, serviceBDistribution, "serviceA", 1.0);
 
         // setup experiment
         ExperimentInput experimentInput = new ExperimentInput();
@@ -94,6 +97,17 @@ public class Exercise3 {
         // TODO: YOUR CODE HERE
         // set up server type B
         //
+        for(int i = 0; i < nServersB; i++) {
+            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceBGenerator);
+
+            server.setSocketPolicy(SocketPowerPolicy.NO_MANAGEMENT);
+            server.setCorePolicy(CorePowerPolicy.NO_MANAGEMENT);
+
+            dataCenter.addServer(server);
+            measurer.addServer(server);
+        }
+
+
 
         experimentInput.setDataCenter(dataCenter);
 
@@ -106,6 +120,9 @@ public class Exercise3 {
         System.out.println("Response Mean: " + responseTimeMean);
         double responseTime95th = experiment.getStats().getStat(StatName.SOJOURN_TIME).getQuantile(.95);
         System.out.println("Response 95: " + responseTime95th);
+	//TODO no idea if this is right...
+        double serverLoad = experiment.getStats().getStat(StatName.SERVER_LEVEL_UTIL).getAverage();
+        System.out.println("Server Load Mean: " + serverLoad);
 
     }
 
