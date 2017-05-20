@@ -160,6 +160,13 @@ public class Server implements Powerable, Serializable {
      */
     protected int jobsInServerInvariant;
 
+
+    /**
+     *A variable to keep track of the previously scheduled Server
+     *We need this 'memory' for round robin
+     */
+    private int prevSocketIndex;
+
     /**
      * Creates a new server.
      *
@@ -397,35 +404,74 @@ public class Server implements Powerable, Serializable {
         double highestUtilization = Double.NEGATIVE_INFINITY;
         Socket leastUtilizedSocket = null;
         double lowestUtilization = Double.POSITIVE_INFINITY;
+	Socket nextSocket =null;
+	int foundNext=0;
 
-        for (int i = 0; i < this.sockets.length; i++) {
-            Socket currentSocket = this.sockets[i];
-            double currentUtilization = currentSocket.getInstantUtilization();
-
-            if (currentUtilization > highestUtilization
+	if(this.scheduler==Scheduler.ROUND_ROBIN){ //dont waste our time with more loops if we don't need them
+	    int currentIndex; //check for wrap around case
+	    if(this.prevSocketIndex+1 == this.sockets.length){
+		currentIndex=0;
+	    }else{
+		currentIndex=this.prevSocketIndex+1;
+	    }
+	    //seperate loops for round robin. Not super efficient but...
+	    for (int i = currentIndex;i<this.sockets.length;i++){
+		if(foundNext==0 && this.sockets[i].getRemainingCapacity()>0){
+		    nextSocket = this.sockets[i];
+		    foundNext=1;
+		    this.prevSocketIndex=i;
+		}
+	    }
+	    //need to start from the bottom if we didn't find one in the first partial loop
+	    if(foundNext==0){
+		for (int i = 0;i<currentIndex;i++){
+		    if(foundNext==0 && this.sockets[i].getRemainingCapacity()>0){
+			nextSocket = this.sockets[i];
+			foundNext=1;
+			this.prevSocketIndex=i;
+		    }
+		}
+	    }
+	}else{	//loop for non round robin
+	    for (int i = 0; i < this.sockets.length; i++) {
+		Socket currentSocket = this.sockets[i];
+		double currentUtilization = currentSocket.getInstantUtilization();
+		
+		if (currentUtilization > highestUtilization
                     && currentSocket.getRemainingCapacity() > 0) {
-                highestUtilization = currentUtilization;
-                mostUtilizedSocket = currentSocket;
-            }
-
-            if (currentUtilization < lowestUtilization
+		    highestUtilization = currentUtilization;
+		    mostUtilizedSocket = currentSocket;
+		}
+		
+		if (currentUtilization < lowestUtilization
                     && currentSocket.getRemainingCapacity() > 0) {
-                lowestUtilization = currentUtilization;
-                leastUtilizedSocket = currentSocket;
-            }
+		    lowestUtilization = currentUtilization;
+		    leastUtilizedSocket = currentSocket;
+		}
+		
+	    }
+	}
 
-        }
-
-        // Pick a socket to put the job on depending on the scheduling policy
-        if (this.scheduler == Scheduler.BIN_PACK) {
-            targetSocket = mostUtilizedSocket;
-        } else if (this.scheduler == Scheduler.LOAD_BALANCE) {
-            targetSocket = leastUtilizedSocket;
-        } else {
-            Sim.fatalError("Bad scheduler");
-        }
-
+	    // Pick a socket to put the job on depending on the scheduling policy
+	    if (this.scheduler == Scheduler.BIN_PACK) {
+		targetSocket = mostUtilizedSocket;
+	    } else if (this.scheduler == Scheduler.LOAD_BALANCE) {
+		targetSocket = leastUtilizedSocket;
+	    } else if (this.scheduler == Scheduler.ROUND_ROBIN){
+		targetSocket=nextSocket;
+	    }else {
+		Sim.fatalError("Bad scheduler");
+	    }
+	    
         job.markStart(time);
+	if (targetSocket==null){
+	    System.out.print ("Value of FoundNext is = " + foundNext);
+	    System.out.println("Previous Socket Index is = " + this.prevSocketIndex);
+	    System.out.println("Total socket count is " + this.sockets.length);
+	    for (int i = 0; i < this.sockets.length; i++) {
+		System.out.println("index "+ i + " has follow capacity = " +this.sockets[i].getRemainingCapacity());
+	    }
+	}
         targetSocket.insertJob(time, job);
         this.jobToSocketMap.put(job, targetSocket);
     }
@@ -520,7 +566,9 @@ public class Server implements Powerable, Serializable {
             this.scheduler = Scheduler.LOAD_BALANCE;
         } else if (theSchedulerType.equals("BIN_PACK")) {
             this.scheduler = Scheduler.BIN_PACK;
-        } else {
+        } else if (theSchedulerType.equals("ROUND_ROBIN")){
+	    this.scheduler = Scheduler.ROUND_ROBIN;
+	} else {
             Sim.fatalError("Bad scheduler");
         }
     }
