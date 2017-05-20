@@ -66,7 +66,7 @@ public class Exercise3 {
         // TODO: YOUR CODE HERE
         // serviceBGenerator
         //
-        EmpiricalGenerator serviceBGenerator  = new EmpiricalGenerator(rand, serviceBDistribution, "serviceA", 1.0);
+        EmpiricalGenerator serviceBGenerator  = new EmpiricalGenerator(rand, serviceBDistribution, "serviceB", 1.0);
 
         // setup experiment
         ExperimentInput experimentInput = new ExperimentInput();
@@ -116,14 +116,14 @@ public class Exercise3 {
 
         // display results
         System.out.println("====== Results ======");
+	System.out.println("Number of A servers: "+nServersA +" Number of B servers: "+nServersB);
         double responseTimeMean = experiment.getStats().getStat(StatName.SOJOURN_TIME).getAverage();
         System.out.println("Response Mean: " + responseTimeMean);
         double responseTime95th = experiment.getStats().getStat(StatName.SOJOURN_TIME).getQuantile(.95);
         System.out.println("Response 95: " + responseTime95th);
 	//TODO no idea if this is right...
-        double serverLoad = experiment.getStats().getStat(StatName.SERVER_LEVEL_UTIL).getAverage();
-        System.out.println("Server Load Mean: " + serverLoad);
-
+        double serverLoadMean = experiment.getStats().getStat(StatName.SERVER_LEVEL_UTIL).getAverage();
+        System.out.println("Server Load Mean: " + serverLoadMean);
     }
 
     public static void main(String[] args) {
