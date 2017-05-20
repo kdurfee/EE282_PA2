@@ -167,6 +167,15 @@ public class Server implements Powerable, Serializable {
      */
     private int prevSocketIndex;
 
+
+    /**
+     *A variable to keep track of average job time
+     *We need this 'memory' for shortest job first
+     */
+    private double JobSizeTotal;
+    private int jobCount;
+    private int priorityJobCount;
+
     /**
      * Creates a new server.
      *
@@ -264,16 +273,43 @@ public class Server implements Powerable, Serializable {
      * @param job - the job that is inserted
      */
     public void insertJob(final double time, final Job job) {
-        // Check if the job should be serviced now or put in the queue
-        if (this.getRemainingCapacity() == 0) {
-            // There was no room in the server, put it in the queue
-            this.queue.add(job);
-        } else {
-            // The job can start service immediately
-            this.startJobService(time, job);
-        }
-
-        // Job has entered the system
+	double AVGCSEDNS =.18843493;
+	double AVGNEWMAN = .08244058999;
+	double SHORTEST_MULT = 4.25;
+	if(this.priorityPolicy == Priority.JOB_PRIORITIES){
+	    //determine if the length is +/- 10% of mean
+	    if(this.getRemainingCapacity()==0){
+		this.queue.add(job);
+	    }else if(job.getSize()<= 1.1*AVGNEWMAN && job.getSize()>= .9*AVGNEWMAN){
+		this.startJobService(time,job);
+	    }else{
+		this.queue.add(job);
+	    }
+	}else if(this.priorityPolicy==Priority.SHORTEST_JOB_FIRST){
+	    //first, update the mean
+	    this.jobCount = this.jobCount+1;
+	    this.JobSizeTotal = this.JobSizeTotal + job.getSize();
+	    double currentMean = this.JobSizeTotal / this.jobCount;
+	    if(this.getRemainingCapacity()==0){
+		this.queue.add(job);
+	    }else if(job.getSize()<= (AVGNEWMAN*SHORTEST_MULT)){ //if it is small enough, skip the queue
+		this.startJobService(time,job);
+		this.priorityJobCount = this.priorityJobCount+1;
+	    }else{
+		this.queue.add(job);
+	    }
+	    	    System.out.println("job count is " +this.jobCount+ " and prioritized oucnt is " + this.priorityJobCount);
+	}else{
+	    // Check if the job should be serviced now or put in the queue
+	    if (this.getRemainingCapacity() == 0) {
+		// There was no room in the server, put it in the queue
+		this.queue.add(job);
+	    } else {
+		// The job can start service immediately
+		this.startJobService(time, job);
+	    }
+	}
+	// Job has entered the system
         this.jobsInServerInvariant++;
         checkInvariants();
     }

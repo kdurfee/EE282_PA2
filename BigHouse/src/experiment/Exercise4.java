@@ -103,6 +103,7 @@ public class Exercise4 {
 
         // display results
         System.out.println("====== Results ======");
+	System.out.println("Average Service Time = " +averageServiceTime);
         double responseTimeMean = experiment.getStats().getStat(StatName.SOJOURN_TIME).getAverage();
         System.out.println("Response Mean: " + responseTimeMean);
         double responseTime95th = experiment.getStats().getStat(StatName.SOJOURN_TIME).getQuantile(.95);
