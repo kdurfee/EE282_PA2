@@ -82,6 +82,9 @@ public class Server implements Powerable, Serializable {
          * Round-robin regardless of the load.
          */
         ROUND_ROBIN,
+
+
+	OPTIONAL,
     };
 
     /**
@@ -441,9 +444,42 @@ public class Server implements Powerable, Serializable {
         Socket leastUtilizedSocket = null;
         double lowestUtilization = Double.POSITIVE_INFINITY;
 	Socket nextSocket =null;
+	Socket optionalSocket=null;
 	int foundNext=0;
+	if(this.scheduler==Scheduler.OPTIONAL){
+		double AVGCSEDNS =.18843493;
+		double AVGNEWMAN = .08244058999;
+		if(job.getSize()<AVGCSEDNS/10 && this.sockets[0].getRemainingCapacity()>0){//very small always goes in bucket 0
+			optionalSocket=this.sockets[0];
+			foundNext=1;
+			System.out.println("SMALL SOCKET");
+		}else if(job.getSize()>AVGCSEDNS*2.8 && this.sockets[1].getRemainingCapacity()>0){//very large always goes in bucket 1
+			optionalSocket=this.sockets[1];
+			foundNext=1;
+			System.out.println("LARGE SOCKET");
+		}else{
+			if(job.getSize()>AVGCSEDNS*2.8){
+				System.out.println("LARGE SOCKET, BUT FULL");
+			}
+			if(job.getSize()<AVGCSEDNS/10){
+				System.out.println("SMALL SOCKET, BUT FULL");
+			}
+			foundNext=0;
+		}
+		if(foundNext==0){//load balance between the remaining		
+			for (int i = 2; i < this.sockets.length; i++) {
+                		Socket currentSocket = this.sockets[i];
+                		double currentUtilization = currentSocket.getInstantUtilization();
 
-	if(this.scheduler==Scheduler.ROUND_ROBIN){ //dont waste our time with more loops if we don't need them
+               			if (currentUtilization > highestUtilization
+                    		&& currentSocket.getRemainingCapacity() > 0) {
+                    			highestUtilization = currentUtilization;
+                    			mostUtilizedSocket = currentSocket;
+                		}
+			}
+			optionalSocket=mostUtilizedSocket;	
+		}							
+	}else if(this.scheduler==Scheduler.ROUND_ROBIN){ //dont waste our time with more loops if we don't need them
 	    int currentIndex; //check for wrap around case
 	    if(this.prevSocketIndex+1 == this.sockets.length){
 		currentIndex=0;
@@ -495,6 +531,8 @@ public class Server implements Powerable, Serializable {
 		targetSocket = leastUtilizedSocket;
 	    } else if (this.scheduler == Scheduler.ROUND_ROBIN){
 		targetSocket=nextSocket;
+	    }else if (this.scheduler == Scheduler.OPTIONAL){
+		targetSocket=optionalSocket;
 	    }else {
 		Sim.fatalError("Bad scheduler");
 	    }
@@ -604,7 +642,9 @@ public class Server implements Powerable, Serializable {
             this.scheduler = Scheduler.BIN_PACK;
         } else if (theSchedulerType.equals("ROUND_ROBIN")){
 	    this.scheduler = Scheduler.ROUND_ROBIN;
-	} else {
+	} else if (theSchedulerType.equals("OPTIONAL")){
+		this.scheduler=Scheduler.OPTIONAL;
+	}else {
             Sim.fatalError("Bad scheduler");
         }
     }
