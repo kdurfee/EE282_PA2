@@ -158,6 +158,11 @@ public class Server implements Powerable, Serializable {
     private Generator serviceGenerator;
 
     /**
+     * average service time metric for priority
+     */
+    private double serviceTime;
+
+    /**
      * A variable to track the number of jobs in the system and double check
      * the rest of the logic doesn't add/drop jobs.
      */
@@ -192,10 +197,12 @@ public class Server implements Powerable, Serializable {
                   final int theCoresPerSocket,
                   final Experiment anExperiment,
                   final Generator anArrivalGenerator,
-                  final Generator aServiceGenerator) {
+                  final Generator aServiceGenerator,
+		  final double averageServiceTime) {
         this.experiment = anExperiment;
         this.arrivalGenerator = anArrivalGenerator;
         this.serviceGenerator = aServiceGenerator;
+        this.serviceTime = averageServiceTime;
         this.queue = new LinkedList<Job>();
         this.sockets = new Socket[theNumberOfSockets];
         for (int i = 0; i < theNumberOfSockets; i++) {
@@ -283,7 +290,7 @@ public class Server implements Powerable, Serializable {
 	    //determine if the length is +/- 10% of mean
 	    if(this.getRemainingCapacity()==0){
 		this.queue.add(job);
-	    }else if(job.getSize()<= 1.1*AVGNEWMAN && job.getSize()>= .9*AVGNEWMAN){
+	    }else if(job.getSize()<= 1.1*this.serviceTime && job.getSize()>= .9*this.serviceTime){
 		this.startJobService(time,job);
 	    }else{
 		this.queue.add(job);
@@ -295,7 +302,7 @@ public class Server implements Powerable, Serializable {
 	    double currentMean = this.JobSizeTotal / this.jobCount;
 	    if(this.getRemainingCapacity()==0){
 		this.queue.add(job);
-	    }else if(job.getSize()<= (AVGNEWMAN*SHORTEST_MULT)){ //if it is small enough, skip the queue
+	    }else if(job.getSize()<= (this.serviceTime*SHORTEST_MULT)){ //if it is small enough, skip the queue
 		this.startJobService(time,job);
 		this.priorityJobCount = this.priorityJobCount+1;
 	    }else{
