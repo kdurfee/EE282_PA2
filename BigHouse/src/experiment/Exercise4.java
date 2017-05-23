@@ -70,7 +70,7 @@ public class Exercise4 {
         PowerMeasurer measurer = new PowerMeasurer(experiment, measurePeriod);
 
         for(int i = 0; i < nServers; i++) {
-            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceGenerator);
+            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceGenerator, averageServiceTime);
 
             server.setSocketPolicy(SocketPowerPolicy.SOCKET_PARKING);
             server.setCorePolicy(CorePowerPolicy.NO_MANAGEMENT);
