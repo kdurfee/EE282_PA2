@@ -81,7 +81,7 @@ public class Exercise2 {
 		PowerCappingEnforcer enforcer = new PowerCappingEnforcer(experiment, capPeriod, globalCap, maxPower, minPower);
 
         for(int i = 0; i < nServers; i++) {
-            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceGenerator);
+            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceGenerator, averageServiceTime);
 
             server.setSocketPolicy(SocketPowerPolicy.NO_MANAGEMENT);
             server.setCorePolicy(CorePowerPolicy.NO_MANAGEMENT);
