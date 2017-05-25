@@ -85,7 +85,7 @@ public class Exercise3 {
         PowerMeasurer measurer = new PowerMeasurer(experiment, measurePeriod);
 
         for(int i = 0; i < nServersA; i++) {
-            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceAGenerator);
+            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceAGenerator, averageServiceTime);
 
             server.setSocketPolicy(SocketPowerPolicy.NO_MANAGEMENT);
             server.setCorePolicy(CorePowerPolicy.NO_MANAGEMENT);
@@ -99,7 +99,7 @@ public class Exercise3 {
         // set up server type B
         //
         for(int i = 0; i < nServersB; i++) {
-            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceBGenerator);
+            Server server = new Server(sockets, cores, experiment, arrivalGenerator, serviceBGenerator, averageServiceTime);
 
             server.setSocketPolicy(SocketPowerPolicy.NO_MANAGEMENT);
             server.setCorePolicy(CorePowerPolicy.NO_MANAGEMENT);
