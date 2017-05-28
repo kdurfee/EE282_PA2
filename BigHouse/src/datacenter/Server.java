@@ -183,7 +183,7 @@ public class Server implements Powerable, Serializable {
     private double JobSizeTotal;
     private int jobCount;
     private int priorityJobCount;
-
+    private int passedOver; //how many times have we bypassed the queue in a row?
     /**
      * Creates a new server.
      *
@@ -212,6 +212,7 @@ public class Server implements Powerable, Serializable {
         this.scheduler = Scheduler.LOAD_BALANCE;
         this.jobsInServerInvariant = 0;
         this.paused = false;
+	this.passedOver=0;
     }
 
     /**
@@ -283,9 +284,10 @@ public class Server implements Powerable, Serializable {
      * @param job - the job that is inserted
      */
     public void insertJob(final double time, final Job job) {
-	double AVGCSEDNS =.18843493;
-	double AVGNEWMAN = .08244058999;
-	double SHORTEST_MULT = 4.25;
+	//double AVGCSEDNS =.18843493;
+	//double AVGNEWMAN = .08244058999;
+	double SHORTEST_MULT = 3;
+	int MAX_PASSOVER = 4;
 	if(this.priorityPolicy == Priority.JOB_PRIORITIES){
 	    //determine if the length is +/- 10% of mean
 	    if(this.getRemainingCapacity()==0){
@@ -300,15 +302,18 @@ public class Server implements Powerable, Serializable {
 	    this.jobCount = this.jobCount+1;
 	    this.JobSizeTotal = this.JobSizeTotal + job.getSize();
 	    double currentMean = this.JobSizeTotal / this.jobCount;
-	    if(this.getRemainingCapacity()==0){
+	    if(this.getRemainingCapacity()==0){ //have to queue if full up
 		this.queue.add(job);
-	    }else if(job.getSize()<= (this.serviceTime*SHORTEST_MULT)){ //if it is small enough, skip the queue
+	    }else if(job.getSize()<= (this.serviceTime*SHORTEST_MULT) && this.passedOver < MAX_PASSOVER){ //if it is small enough, and the skip count is not too highskip the queue
 		this.startJobService(time,job);
 		this.priorityJobCount = this.priorityJobCount+1;
+		if(!this.queue.isEmpty()){
+			this.passedOver = this.passedOver+1; //we skipped the queue
+		}		
 	    }else{
 		this.queue.add(job);
 	    }
-	    	    System.out.println("job count is " +this.jobCount+ " and prioritized oucnt is " + this.priorityJobCount);
+	    	    //System.out.println("job count is " +this.jobCount+ " and prioritized oucnt is " + this.priorityJobCount);
 	}else{
 	    // Check if the job should be serviced now or put in the queue
 	    if (this.getRemainingCapacity() == 0) {
@@ -584,6 +589,7 @@ public class Server implements Powerable, Serializable {
         if (jobWaiting) {
             Job dequeuedJob = this.queue.poll();
             this.startJobService(time, dequeuedJob);
+            this.passedOver=0; //The queue has been updated
         }
 
         // Job has left the systems
