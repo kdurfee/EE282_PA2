@@ -110,6 +110,10 @@ public class Server implements Powerable, Serializable {
         /**
          * Define your own!
          */
+	DROP_LONG,
+
+	DROP_NON_PRIORITIES,
+
     };
 
     /**
@@ -288,7 +292,38 @@ public class Server implements Powerable, Serializable {
 	//double AVGNEWMAN = .08244058999;
 	double SHORTEST_MULT = 3;
 	int MAX_PASSOVER = 4;
-	if(this.priorityPolicy == Priority.JOB_PRIORITIES){
+	if (this.priorityPolicy == Priority.JOB_PRIORITIES){
+		if(this.getRemainingCapacity()==0){
+		//if we are full up then we manage the queue
+		//if the job should be prioritized, add it to the front of the queue
+			if(job.getSize()<=1.1*this.serviceTime && job.getSize()>=.9*this.serviceTime){
+				this.queue.addFirst(job);
+			}else{//otherwise, send it to the back of the queue
+				this.queue.addLast(job);
+			}
+		}else{
+		//if not full, always schedule job
+			this.startJobService(time,job);
+		}
+	}else if(this.priorityPolicy == Priority.SHORTEST_JOB_FIRST){
+		if(this.getRemainingCapacity()==0){
+			//if the job is short enough, put it at the front of the queue
+			//and increment the counter for passed over so we can keep track of how often we do this
+			if(job.getSize()<= (this.serviceTime*SHORTEST_MULT) && this.passedOver < MAX_PASSOVER){
+				this.queue.addFirst(job);
+				this.passedOver=this.passedOver+1;
+			}else{
+				//add to end of queue like normal
+				this.queue.addLast(job);
+				this.passedOver=0;
+			}
+		}else{
+			//if not full, always schedule the job
+			this.startJobService(time,job);
+			this.passedOver=0;
+		}
+
+	}else if(this.priorityPolicy == Priority.DROP_NON_PRIORITIES){
 	    //determine if the length is +/- 10% of mean
 	    if(this.getRemainingCapacity()==0){
 		this.queue.add(job);
@@ -297,20 +332,20 @@ public class Server implements Powerable, Serializable {
 	    }else{
 		this.queue.add(job);
 	    }
-	}else if(this.priorityPolicy==Priority.SHORTEST_JOB_FIRST){
+	}else if(this.priorityPolicy==Priority.DROP_LONG){
 	    //first, update the mean
 	    this.jobCount = this.jobCount+1;
 	    this.JobSizeTotal = this.JobSizeTotal + job.getSize();
 	    double currentMean = this.JobSizeTotal / this.jobCount;
 	    if(this.getRemainingCapacity()==0){ //have to queue if full up
 		this.queue.add(job);
-	    }else if(job.getSize()<= (this.serviceTime*SHORTEST_MULT) && this.passedOver < MAX_PASSOVER){ //if it is small enough, and the skip count is not too highskip the queue
+	    }else if(job.getSize()<= (this.serviceTime*SHORTEST_MULT)){ //if it is small enough skip the queue
 		this.startJobService(time,job);
 		this.priorityJobCount = this.priorityJobCount+1;
 		if(!this.queue.isEmpty()){
 			this.passedOver = this.passedOver+1; //we skipped the queue
 		}		
-	    }else{
+	    }else{//put the long jobs in the queue
 		this.queue.add(job);
 	    }
 	    	    //System.out.println("job count is " +this.jobCount+ " and prioritized oucnt is " + this.priorityJobCount);
@@ -589,7 +624,6 @@ public class Server implements Powerable, Serializable {
         if (jobWaiting) {
             Job dequeuedJob = this.queue.poll();
             this.startJobService(time, dequeuedJob);
-            this.passedOver=0; //The queue has been updated
         }
 
         // Job has left the systems
